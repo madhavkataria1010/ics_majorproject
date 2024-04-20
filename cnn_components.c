@@ -1,190 +1,340 @@
+/*
+  cnn.c
+  Convolutional Neural Network in C.
+*/
+
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-#include "cnn_components.h"
+#include "cnn.h"
 
-double rnd(){
-    double output = (double) rand()/RAND_MAX;
-    return output;
+#define DEBUG_LAYER 0
+
+
+/*  Misc. functions
+ */
+
+/* rnd(): uniform random [0.0, 1.0] */
+static inline double rnd()
+{
+    return ((double)rand() / RAND_MAX);
 }
 
-double norm_rnd(){
-    double output = (double) (rnd() + rnd() + rnd() + rnd() - 2)*1.724;
-    return output;
+/* nrnd(): normal random (std=1.0) */
+static inline double nrnd()
+{
+    return (rnd()+rnd()+rnd()+rnd()-2.0) * 1.724; /* std=1.0 */
 }
 
-double relu(double x){
-    if (x>=0) return x;
-    else return 0;
+#if 0
+/* sigmoid(x): sigmoid function */
+static inline double sigmoid(double x)
+{
+    return 1.0 / (1.0 + exp(-x));
 }
-
-double relu_grad(double x){
-    if (x>=0) return 1;
-    else return 0;
+/* sigmoid_d(y): sigmoid gradient */
+static inline double sigmoid_g(double y)
+{
+    return y * (1.0 - y);
 }
+#endif
 
-double tanh(double x)
+#if 0
+/* tanh(x): hyperbolic tangent */
+static inline double tanh(double x)
 {
     return 2.0 / (1.0 + exp(-2*x)) - 1.0;
 }
-
-double tanh_grad(double y)
+#endif
+/* tanh_g(y): hyperbolic tangent gradient */
+static inline double tanh_g(double y)
 {
-    return (double) 1 - y*y;
+    return 1.0 - y*y;
 }
 
-layer_component* create_input_layer(int depth, int dimension){
-    layer_component* self = (layer_component*) calloc(1, sizeof(layer_component));
-    self->prev_layer = NULL;
-    self->next_layer = NULL;
-    self->layer_id = 0;
+/* relu(x): ReLU */
+static inline double relu(double x)
+{
+    return (0 < x)? x : 0;
+}
+/* relu_g(y): ReLU gradient */
+static inline double relu_g(double y)
+{
+    return (0 < y)? 1 : 0;
+}
 
+
+/*  Layer
+ */
+
+/* Layer_create(lprev, ltype, depth, width, height, nbiases, nweights)
+   Creates a Layer object for internal use.
+*/
+static Layer* Layer_create(
+    Layer* lprev, LayerType ltype,
+    int depth, int width, int height,
+    int nbiases, int nweights)
+{
+    Layer* self = (Layer*)calloc(1, sizeof(Layer));
+    if (self == NULL) return NULL;
+
+    self->lprev = lprev;
+    self->lnext = NULL;
+    self->ltype = ltype;
+    self->lid = 0;
+    if (lprev != NULL) {
+        assert (lprev->lnext == NULL);
+        lprev->lnext = self;
+        self->lid = lprev->lid+1;
+    }
     self->depth = depth;
-    self->dimension = dimension;
+    self->width = width;
+    self->height = height;
 
-    self->num_nodes = depth*dimension*dimension;
+    /* Nnodes: number of outputs. */
+    self->nnodes = depth * width * height;
+    self->outputs = (double*)calloc(self->nnodes, sizeof(double));
+    self->gradients = (double*)calloc(self->nnodes, sizeof(double));
+    self->errors = (double*)calloc(self->nnodes, sizeof(double));
 
-    self->output = (double*) calloc(self->num_nodes, sizeof(double));
-    self->gradient = (double*) calloc(self->num_nodes, sizeof(double));
-    self->errors = (double*) calloc(self->num_nodes, sizeof(double));
+    self->nbiases = nbiases;
+    self->biases = (double*)calloc(self->nbiases, sizeof(double));
+    self->u_biases = (double*)calloc(self->nbiases, sizeof(double));
 
-    self->num_biases = 0;
-    self->num_weights = 0;
-
-    self->biases = NULL;
-    self->up_biases = NULL;
-
-    self->weights = NULL;
-    self->up_weights  =NULL;
-
-    self->kernel_size = -1;
-    self->padding = -1;
-    self->stride = -1;
+    self->nweights = nweights;
+    self->weights = (double*)calloc(self->nweights, sizeof(double));
+    self->u_weights = (double*)calloc(self->nweights, sizeof(double));
 
     return self;
 }
 
-layer_component* create_conv_layer(layer_component* prev_layer, int depth, int dimension,
-                                    int kernel_size, int padding, int stride, double std){
+/* Layer_destroy(self)
+   Releases the memory.
+*/
+void Layer_destroy(Layer* self)
+{
+    assert (self != NULL);
 
-    layer_component* self = (layer_component*) calloc(1, sizeof(layer_component));
-                 
-    self->kernel_size = kernel_size;
-    self->padding = padding;
-    self->stride = stride;
-
-    self->prev_layer = prev_layer;
-    prev_layer->next_layer = self;
-    self->next_layer = NULL;
-    self->layer_id = prev_layer->layer_id + 1;
-
-    self->depth = depth;
-    self->dimension = dimension;
-
-    self->num_nodes = depth*dimension*dimension;
-
-    self->output = (double*) calloc(self->num_nodes, sizeof(double));
-    self->gradient = (double*) calloc(self->num_nodes, sizeof(double));
-    self->errors = (double*) calloc(self->num_nodes, sizeof(double));
-
-    self->num_biases = depth;
-    self->num_weights = depth*prev_layer->depth*kernel_size*kernel_size;
-
-    self->biases = (double*)calloc(self->num_biases, sizeof(double));
-    self->up_biases = (double*)calloc(self->num_biases, sizeof(double));
-
-    self->weights = (double*)calloc(self->num_weights, sizeof(double));
-    self->up_weights = (double*)calloc(self->num_weights, sizeof(double));
-
-    for (int i=0; i<self->num_weights; i++)
-    self->weights[i] = norm_rnd()*std;
-
-    for (int i=0; i<self->num_biases; i++)
-    self->biases[i] = 0;
-
-    return self;
-}
-
-layer_component* create_full_layer(layer_component* prev_layer, int num_nodes, double std){
-
-    layer_component* self = (layer_component*) calloc(1, sizeof(layer_component));
-
-    self->prev_layer = prev_layer;
-    prev_layer->next_layer = self;
-    self->next_layer = NULL;
-    self->layer_id = prev_layer->layer_id + 1;
-
-    self->depth = num_nodes;
-    self->dimension = 1;
-
-    self->num_nodes = self->depth;
-
-    self->output = (double*) calloc(self->num_nodes, sizeof(double));
-    self->gradient = (double*) calloc(self->num_nodes, sizeof(double));
-    self->errors = (double*) calloc(self->num_nodes, sizeof(double));
-
-    self->num_biases = self->num_nodes;
-    self->num_weights = num_nodes*prev_layer->num_nodes;
-
-    self->biases = (double*)calloc(self->num_biases, sizeof(double));
-    self->up_biases = (double*)calloc(self->num_biases, sizeof(double));
-
-    self->weights = (double*)calloc(self->num_weights, sizeof(double));
-    self->up_weights = (double*)calloc(self->num_weights, sizeof(double));
-
-    for (int i=0; i<self->num_weights; i++)
-    self->weights[i] = norm_rnd()*std;
-
-    for (int i=0; i<self->num_biases; i++)
-    self->biases[i] = 0;
-
-
-    return self;
-}
-
-void remove_layer(layer_component* self){
-    free(self->output);
-    free(self->gradient);
+    free(self->outputs);
+    free(self->gradients);
     free(self->errors);
 
     free(self->biases);
+    free(self->u_biases);
     free(self->weights);
-
-    free(self->up_biases);
-    free(self->up_weights);
+    free(self->u_weights);
 
     free(self);
 }
 
-void feedforwd_conv(layer_component* self){
-    layer_component* prev_layer = self->prev_layer;
+/* Layer_dump(self, fp)
+   Shows the debug output.
+*/
+void Layer_dump(const Layer* self, FILE* fp)
+{
+    assert (self != NULL);
+    Layer* lprev = self->lprev;
+    fprintf(fp, "Layer%d ", self->lid);
+    if (lprev != NULL) {
+        fprintf(fp, "(lprev=Layer%d) ", lprev->lid);
+    }
+    fprintf(fp, "shape=(%d,%d,%d), nodes=%d\n",
+            self->depth, self->width, self->height, self->nnodes);
+    {
+        int i = 0;
+        for (int z = 0; z < self->depth; z++) {
+            fprintf(fp, "  %d:\n", z);
+            for (int y = 0; y < self->height; y++) {
+                fprintf(fp, "    [");
+                for (int x = 0; x < self->width; x++) {
+                    fprintf(fp, " %.4f", self->outputs[i++]);
+                }
+                fprintf(fp, "]\n");
+            }
+        }
+    }
 
-    int kernsize = self->kernel_size;
+    switch (self->ltype) {
+    case LAYER_FULL:
+        /* Fully connected layer. */
+        assert (lprev != NULL);
+        fprintf(fp, "  biases = [");
+        for (int i = 0; i < self->nnodes; i++) {
+            fprintf(fp, " %.4f", self->biases[i]);
+        }
+        fprintf(fp, "]\n");
+        fprintf(fp, "  weights = [\n");
+        {
+            int k = 0;
+            for (int i = 0; i < self->nnodes; i++) {
+                fprintf(fp, "    [");
+                for (int j = 0; j < lprev->nnodes; j++) {
+                    fprintf(fp, " %.4f", self->weights[k++]);
+                }
+                fprintf(fp, "]\n");
+            }
+        }
+        fprintf(fp, "  ]\n");
+        break;
+
+    case LAYER_CONV:
+        /* Convolutional layer. */
+        assert (lprev != NULL);
+        fprintf(fp, "  stride=%d, kernsize=%d\n",
+                self->conv.stride, self->conv.kernsize);
+        {
+            int k = 0;
+            for (int z = 0; z < self->depth; z++) {
+                fprintf(fp, "  %d: bias=%.4f, weights = [", z, self->biases[z]);
+                for (int j = 0; j < lprev->depth * self->conv.kernsize * self->conv.kernsize; j++) {
+                    fprintf(fp, " %.4f", self->weights[k++]);
+                }
+                fprintf(fp, "]\n");
+            }
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
+/* Layer_feedForw_full(self)
+   Performs feed forward updates.
+*/
+static void Layer_feedForw_full(Layer* self)
+{
+    assert (self->ltype == LAYER_FULL);
+    assert (self->lprev != NULL);
+    Layer* lprev = self->lprev;
+
+    int k = 0;
+    for (int i = 0; i < self->nnodes; i++) {
+        /* Compute Y = (W * X + B) without activation function. */
+        double x = self->biases[i];
+        for (int j = 0; j < lprev->nnodes; j++) {
+            x += (lprev->outputs[j] * self->weights[k++]);
+        }
+        self->outputs[i] = x;
+    }
+
+    if (self->lnext == NULL) {
+        /* Last layer - use Softmax. */
+        double m = -1;
+        for (int i = 0; i < self->nnodes; i++) {
+            double x = self->outputs[i];
+            if (m < x) { m = x; }
+        }
+        double t = 0;
+        for (int i = 0; i < self->nnodes; i++) {
+            double x = self->outputs[i];
+            double y = exp(x-m);
+            self->outputs[i] = y;
+            t += y;
+        }
+        for (int i = 0; i < self->nnodes; i++) {
+            self->outputs[i] /= t;
+            /* This isn't right, but set the same value to all the gradients. */
+            self->gradients[i] = 1;
+        }
+    } else {
+        /* Otherwise, use Tanh. */
+        for (int i = 0; i < self->nnodes; i++) {
+            double x = self->outputs[i];
+            double y = tanh(x);
+            self->outputs[i] = y;
+            self->gradients[i] = tanh_g(y);
+        }
+    }
+
+#if DEBUG_LAYER
+    fprintf(stderr, "Layer_feedForw_full(Layer%d):\n", self->lid);
+    fprintf(stderr, "  outputs = [");
+    for (int i = 0; i < self->nnodes; i++) {
+        fprintf(stderr, " %.4f", self->outputs[i]);
+    }
+    fprintf(stderr, "]\n  gradients = [");
+    for (int i = 0; i < self->nnodes; i++) {
+        fprintf(stderr, " %.4f", self->gradients[i]);
+    }
+    fprintf(stderr, "]\n");
+#endif
+}
+
+static void Layer_feedBack_full(Layer* self)
+{
+    assert (self->ltype == LAYER_FULL);
+    assert (self->lprev != NULL);
+    Layer* lprev = self->lprev;
+
+    /* Clear errors. */
+    for (int j = 0; j < lprev->nnodes; j++) {
+        lprev->errors[j] = 0;
+    }
+
+    int k = 0;
+    for (int i = 0; i < self->nnodes; i++) {
+        /* Computer the weight/bias updates. */
+        double dnet = self->errors[i] * self->gradients[i];
+        for (int j = 0; j < lprev->nnodes; j++) {
+            /* Propagate the errors to the previous layer. */
+            lprev->errors[j] += self->weights[k] * dnet;
+            self->u_weights[k] += dnet * lprev->outputs[j];
+            k++;
+        }
+        self->u_biases[i] += dnet;
+    }
+
+#if DEBUG_LAYER
+    fprintf(stderr, "Layer_feedBack_full(Layer%d):\n", self->lid);
+    for (int i = 0; i < self->nnodes; i++) {
+        double dnet = self->errors[i] * self->gradients[i];
+        fprintf(stderr, "  dnet = %.4f, dw = [", dnet);
+        for (int j = 0; j < lprev->nnodes; j++) {
+            double dw = dnet * lprev->outputs[j];
+            fprintf(stderr, " %.4f", dw);
+        }
+        fprintf(stderr, "]\n");
+    }
+#endif
+}
+
+/* Layer_feedForw_conv(self)
+   Performs feed forward updates.
+*/
+static void Layer_feedForw_conv(Layer* self)
+{
+    assert (self->ltype == LAYER_CONV);
+    assert (self->lprev != NULL);
+    Layer* lprev = self->lprev;
+
+    int kernsize = self->conv.kernsize;
     int i = 0;
     for (int z1 = 0; z1 < self->depth; z1++) {
         /* z1: dst matrix */
         /* qbase: kernel matrix base index */
-        int qbase = z1 * prev_layer->depth * kernsize * kernsize;
-        for (int y1 = 0; y1 < self->dimension; y1++) {
-            int y0 = self->stride * y1 - self->padding;
-            for (int x1 = 0; x1 < self->dimension; x1++) {
-                int x0 = self->stride * x1 - self->padding;
+        int qbase = z1 * lprev->depth * kernsize * kernsize;
+        for (int y1 = 0; y1 < self->height; y1++) {
+            int y0 = self->conv.stride * y1 - self->conv.padding;
+            for (int x1 = 0; x1 < self->width; x1++) {
+                int x0 = self->conv.stride * x1 - self->conv.padding;
                 /* Compute the kernel at (x1,y1) */
                 /* (x0,y0): src pixel */
                 double v = self->biases[z1];
-                for (int z0 = 0; z0 < prev_layer->depth; z0++) {
+                for (int z0 = 0; z0 < lprev->depth; z0++) {
                     /* z0: src matrix */
                     /* pbase: src matrix base index */
-                    int pbase = z0 * prev_layer->dimension * prev_layer->dimension;
+                    int pbase = z0 * lprev->width * lprev->height;
                     for (int dy = 0; dy < kernsize; dy++) {
                         int y = y0+dy;
-                        if (0 <= y && y < prev_layer->dimension) {
-                            int p = pbase + y*prev_layer->dimension;
+                        if (0 <= y && y < lprev->height) {
+                            int p = pbase + y*lprev->width;
                             int q = qbase + dy*kernsize;
                             for (int dx = 0; dx < kernsize; dx++) {
                                 int x = x0+dx;
-                                if (0 <= x && x < prev_layer->dimension) {
-                                    v += prev_layer->output[p+x] * self->weights[q+dx];
+                                if (0 <= x && x < lprev->width) {
+                                    v += lprev->outputs[p+x] * self->weights[q+dx];
                                 }
                             }
                         }
@@ -192,185 +342,268 @@ void feedforwd_conv(layer_component* self){
                 }
                 /* Apply the activation function. */
                 v = relu(v);
-                self->output[i] = v;
-                self->gradient[i] = relu_grad(v);
+                self->outputs[i] = v;
+                self->gradients[i] = relu_g(v);
                 i++;
             }
         }
     }
-}
+    assert (i == self->nnodes);
 
-
-void feedforwd_full(layer_component* self){
-    layer_component* prev_layer = self->prev_layer;
-
-    int k = 0;
-    for (int i = 0; i < self->num_nodes; i++) {
-        /* Compute Y = (W * X + B) without activation function. */
-        double x = self->biases[i];
-        for (int j = 0; j < prev_layer->num_nodes; j++) {
-            x += (prev_layer->output[j] * self->weights[k++]);
-        }
-        self->output[i] = x;
+#if DEBUG_LAYER
+    fprintf(stderr, "Layer_feedForw_conv(Layer%d):\n", self->lid);
+    fprintf(stderr, "  outputs = [");
+    for (int i = 0; i < self->nnodes; i++) {
+        fprintf(stderr, " %.4f", self->outputs[i]);
     }
-
-    if (self->next_layer == NULL) {
-        /* Last layer - use Softmax. */
-        double m = -1;
-        for (int i = 0; i < self->num_nodes; i++) {
-            double x = self->output[i];
-            if (m < x) { m = x; }
-        }
-        double t = 0;
-        for (int i = 0; i < self->num_nodes; i++) {
-            double x = self->output[i];
-            double y = exp(x-m);
-            self->output[i] = y;
-            t += y;
-        }
-        for (int i = 0; i < self->num_nodes; i++) {
-            self->output[i] /= t;
-            /* This isn't right, but set the same value to all the gradients. */
-            self->gradient[i] = 1;
-        }
-    } else {
-        /* Otherwise, use Tanh. */
-        for (int i = 0; i < self->num_nodes; i++) {
-            double x = self->output[i];
-            double y = tanh(x);
-            self->output[i] = y;
-            self->gradient[i] = tanh_grad(y);
-        }
+    fprintf(stderr, "]\n  gradients = [");
+    for (int i = 0; i < self->nnodes; i++) {
+        fprintf(stderr, " %.4f", self->gradients[i]);
     }
+    fprintf(stderr, "]\n");
+#endif
 }
 
-
-void set_input_layer(layer_component* self, double* values){
-    for (int i=0; i<self->num_nodes; i++)
-    self->output[i] = values[i];
-
-    layer_component* cur_layer = self->next_layer;
-
-    while (cur_layer != NULL)
-    {
-        if (cur_layer->kernel_size == 0 && cur_layer->stride == 0) feedforwd_full(cur_layer);
-        else feedforwd_conv(cur_layer);
-
-        cur_layer = cur_layer->next_layer;
-    }
-}
-
-void get_output(layer_component* self, double* outputs){
-    for (int i=0; i<self->num_nodes; i++)
-    outputs[i] = self->output[i];
-}
-
-void feedback_full(layer_component* self){
-    layer_component* prev_layer = self->prev_layer;
+static void Layer_feedBack_conv(Layer* self)
+{
+    assert (self->ltype == LAYER_CONV);
+    assert (self->lprev != NULL);
+    Layer* lprev = self->lprev;
 
     /* Clear errors. */
-    for (int j = 0; j < prev_layer->num_nodes; j++) {
-        prev_layer->errors[j] = 0;
-    }
-
-    int k = 0;
-    for (int i = 0; i < self->num_nodes; i++) {
-        /* Computer the weight/bias updates. */
-        double dnet = self->errors[i] * self->gradient[i];
-        for (int j = 0; j < prev_layer->num_nodes; j++) {
-            /* Propagate the errors to the previous layer. */
-            prev_layer->errors[j] += self->weights[k] * dnet;
-            self->up_weights[k] += dnet * prev_layer->output[j];
-            k++;
-        }
-        self->up_biases[i] += dnet;
-    }
-    // printf("\nfeed full");
-}
-
-void feedback_conv(layer_component* self){\
-    layer_component* lprev = self->prev_layer;
-
-    /* Clear errors. */
-    for (int j = 0; j < lprev->num_nodes; j++) {
+    for (int j = 0; j < lprev->nnodes; j++) {
         lprev->errors[j] = 0;
     }
 
-    int kernsize = self->kernel_size;
+    int kernsize = self->conv.kernsize;
     int i = 0;
     for (int z1 = 0; z1 < self->depth; z1++) {
         /* z1: dst matrix */
         /* qbase: kernel matrix base index */
         int qbase = z1 * lprev->depth * kernsize * kernsize;
-        for (int y1 = 0; y1 < self->dimension; y1++) {
-            int y0 = self->stride * y1 - self->padding;
-            for (int x1 = 0; x1 < self->dimension; x1++) {
-                int x0 = self->stride * x1 - self->padding;
+        for (int y1 = 0; y1 < self->height; y1++) {
+            int y0 = self->conv.stride * y1 - self->conv.padding;
+            for (int x1 = 0; x1 < self->width; x1++) {
+                int x0 = self->conv.stride * x1 - self->conv.padding;
                 /* Compute the kernel at (x1,y1) */
                 /* (x0,y0): src pixel */
-                double dnet = self->errors[i] * self->gradient[i];
+                double dnet = self->errors[i] * self->gradients[i];
                 for (int z0 = 0; z0 < lprev->depth; z0++) {
                     /* z0: src matrix */
                     /* pbase: src matrix base index */
-                    int pbase = z0 * lprev->dimension * lprev->dimension;
+                    int pbase = z0 * lprev->width * lprev->height;
                     for (int dy = 0; dy < kernsize; dy++) {
                         int y = y0+dy;
-                        if (0 <= y && y < lprev->dimension) {
-                            int p = pbase + y*lprev->dimension;
+                        if (0 <= y && y < lprev->height) {
+                            int p = pbase + y*lprev->width;
                             int q = qbase + dy*kernsize;
                             for (int dx = 0; dx < kernsize; dx++) {
                                 int x = x0+dx;
-                                if (0 <= x && x < lprev->dimension) {
+                                if (0 <= x && x < lprev->width) {
                                     lprev->errors[p+x] += self->weights[q+dx] * dnet;
-                                    self->up_weights[q+dx] += dnet * lprev->output[p+x];
+                                    self->u_weights[q+dx] += dnet * lprev->outputs[p+x];
                                 }
                             }
                         }
                     }
                 }
-                self->up_biases[z1] += dnet;
+                self->u_biases[z1] += dnet;
                 i++;
             }
         }
     }
-    // printf("\nfeed conv");
+    assert (i == self->nnodes);
+
+#if DEBUG_LAYER
+    fprintf(stderr, "Layer_feedBack_conv(Layer%d):\n", self->lid);
+    for (int i = 0; i < self->nnodes; i++) {
+        double dnet = self->errors[i] * self->gradients[i];
+        fprintf(stderr, "  dnet=%.4f, dw=[", dnet);
+        for (int j = 0; j < lprev->nnodes; j++) {
+            double dw = dnet * lprev->outputs[j];
+            fprintf(stderr, " %.4f", dw);
+        }
+        fprintf(stderr, "]\n");
+    }
+#endif
 }
 
-double get_total_error(layer_component* self){
-    double total_error = 0;
-    for (int i=0; i<self->num_nodes; i++)
-    total_error += self->errors[i]*self->errors[i];
+/* Layer_setInputs(self, values)
+   Sets the input values.
+*/
+void Layer_setInputs(Layer* self, const double* values)
+{
+    assert (self != NULL);
+    assert (self->ltype == LAYER_INPUT);
+    assert (self->lprev == NULL);
 
-    return (double) total_error/self->num_nodes;
-}
+#if DEBUG_LAYER
+    fprintf(stderr, "Layer_setInputs(Layer%d): values = [", self->lid);
+    for (int i = 0; i < self->nnodes; i++) {
+        fprintf(stderr, " %.4f", values[i]);
+    }
+    fprintf(stderr, "]\n");
+#endif
 
-void learn_output(layer_component* self, double* values){
-
-    for (int i=0; i<self->num_nodes; i++)
-    self->errors[i] = (self->output[i] - values[i]);
-
-    layer_component* cur_layer = self;
-    while (cur_layer->prev_layer != NULL)
-    {   
-        if (cur_layer->kernel_size == 0 && cur_layer->stride == 0) feedback_full(cur_layer);
-        else feedback_conv(cur_layer);
-
-        cur_layer = cur_layer->prev_layer;   
-    }   
-}
-
-void update_parameters(layer_component* self, double lr){
-
-    for (int i=0; i<self->num_biases; i++){
-        self->biases[i] -= lr*self->up_biases[i];
-        self->up_biases[i] = 0;
+    /* Set the values as the outputs. */
+    for (int i = 0; i < self->nnodes; i++) {
+        self->outputs[i] = values[i];
     }
 
-    for (int i=0; i<self->num_weights; i++){
-        self->weights[i] -= lr*self->up_weights[i];
-        self->up_weights[i] = 0;
+    /* Start feed forwarding. */
+    Layer* layer = self->lnext;
+    while (layer != NULL) {
+        switch (layer->ltype) {
+        case LAYER_FULL:
+            Layer_feedForw_full(layer);
+            break;
+        case LAYER_CONV:
+            Layer_feedForw_conv(layer);
+            break;
+        default:
+            break;
+        }
+        layer = layer->lnext;
+    }
+}
+
+/* Layer_getOutputs(self, outputs)
+   Gets the output values.
+*/
+void Layer_getOutputs(const Layer* self, double* outputs)
+{
+    assert (self != NULL);
+    for (int i = 0; i < self->nnodes; i++) {
+        outputs[i] = self->outputs[i];
+    }
+}
+
+/* Layer_getErrorTotal(self)
+   Gets the error total.
+*/
+double Layer_getErrorTotal(const Layer* self)
+{
+    assert (self != NULL);
+    double total = 0;
+    for (int i = 0; i < self->nnodes; i++) {
+        double e = self->errors[i];
+        total += e*e;
+    }
+    return (total / self->nnodes);
+}
+
+/* Layer_learnOutputs(self, values)
+   Learns the output values.
+*/
+void Layer_learnOutputs(Layer* self, const double* values)
+{
+    assert (self != NULL);
+    assert (self->ltype != LAYER_INPUT);
+    assert (self->lprev != NULL);
+    for (int i = 0; i < self->nnodes; i++) {
+        self->errors[i] = (self->outputs[i] - values[i]);
     }
 
-    if (self->prev_layer != NULL)
-    update_parameters(self->prev_layer, lr);
+#if DEBUG_LAYER
+    fprintf(stderr, "Layer_learnOutputs(Layer%d): errors = [", self->lid);
+    for (int i = 0; i < self->nnodes; i++) {
+        fprintf(stderr, " %.4f", self->errors[i]);
+    }
+    fprintf(stderr, "]\n");
+#endif
+
+    /* Start backpropagation. */
+    Layer* layer = self;
+    while (layer != NULL) {
+        switch (layer->ltype) {
+        case LAYER_FULL:
+            Layer_feedBack_full(layer);
+            break;
+        case LAYER_CONV:
+            Layer_feedBack_conv(layer);
+            break;
+        default:
+            break;
+        }
+        layer = layer->lprev;
+    }
+}
+
+/* Layer_update(self, rate)
+   Updates the weights.
+*/
+void Layer_update(Layer* self, double rate)
+{
+    for (int i = 0; i < self->nbiases; i++) {
+        self->biases[i] -= rate * self->u_biases[i];
+        self->u_biases[i] = 0;
+    }
+    for (int i = 0; i < self->nweights; i++) {
+        self->weights[i] -= rate * self->u_weights[i];
+        self->u_weights[i] = 0;
+    }
+    if (self->lprev != NULL) {
+        Layer_update(self->lprev, rate);
+    }
+}
+
+/* Layer_create_input(depth, width, height)
+   Creates an input Layer with size (depth x weight x height).
+*/
+Layer* Layer_create_input(int depth, int width, int height)
+{
+    return Layer_create(
+        NULL, LAYER_INPUT, depth, width, height, 0, 0);
+}
+
+/* Layer_create_full(lprev, nnodes, std)
+   Creates a fully-connected Layer.
+*/
+Layer* Layer_create_full(Layer* lprev, int nnodes, double std)
+{
+    assert (lprev != NULL);
+    Layer* self = Layer_create(
+        lprev, LAYER_FULL, nnodes, 1, 1,
+        nnodes, nnodes * lprev->nnodes);
+    assert (self != NULL);
+
+    for (int i = 0; i < self->nweights; i++) {
+        self->weights[i] = std * nrnd();
+    }
+
+#if DEBUG_LAYER
+    Layer_dump(self, stderr);
+#endif
+    return self;
+}
+
+/* Layer_create_conv(lprev, depth, width, height, kernsize, padding, stride, std)
+   Creates a convolutional Layer.
+*/
+Layer* Layer_create_conv(
+    Layer* lprev, int depth, int width, int height,
+    int kernsize, int padding, int stride, double std)
+{
+    assert (lprev != NULL);
+    assert ((kernsize % 2) == 1);
+    assert ((width-1) * stride + kernsize <= lprev->width + padding*2);
+    assert ((height-1) * stride + kernsize <= lprev->height + padding*2);
+
+    Layer* self = Layer_create(
+        lprev, LAYER_CONV, depth, width, height,
+        depth, depth * lprev->depth * kernsize * kernsize);
+    assert (self != NULL);
+
+    self->conv.kernsize = kernsize;
+    self->conv.padding = padding;
+    self->conv.stride = stride;
+
+    for (int i = 0; i < self->nweights; i++) {
+        self->weights[i] = std * nrnd();
+    }
+
+#if DEBUG_LAYER
+    Layer_dump(self, stderr);
+#endif
+    return self;
 }

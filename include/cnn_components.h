@@ -1,6 +1,12 @@
 #ifndef CNN_COMPONENTS_H
 #define CNN_COMPONENTS_H
 
+typedef enum layertype{
+    INPUT_LAYER,
+    CONV_LAYER,
+    FULL_LAYER
+} layertype;
+
 typedef struct layer_component{
     int layer_id;
     struct layer_component* prev_layer;
@@ -27,6 +33,8 @@ typedef struct layer_component{
     int padding;
     int stride;
 
+    layertype type;
+
 }layer_component;
 
 layer_component* create_input_layer(int depth, int dimension);
@@ -38,13 +46,13 @@ layer_component* create_full_layer(layer_component* prev_layer, int num_nodes, d
 
 void remove_layer(layer_component* self);
 
-void set_input_layer(layer_component* self, double* values);
+void set_input_layer(layer_component* self, const double* values);
 
 void feedforwd_conv(layer_component* self);
 
 void feedforwd_full(layer_component* self);
 
-void get_output(layer_component* self, double* outputs);
+void get_output(const layer_component* self, double* outputs);
 
 double get_total_error(layer_component* self);
 
@@ -52,7 +60,7 @@ void feedback_conv(layer_component* self);
 
 void feedback_full(layer_component* self);
 
-void learn_output(layer_component* self, double* values);
+void learn_output(layer_component* self, const double* values);
 
 void update_parameters(layer_component* self, double lr);
 

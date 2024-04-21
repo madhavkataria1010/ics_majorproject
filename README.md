@@ -39,7 +39,6 @@ The dataset used is included in `/data` consisting of 60,000 training and 10,000
 
 <p align="center">
   <img src="assets/convolutionalnn.png" width="350" title="hover text">
-  Test Loss
 </p>
 
 ## Training

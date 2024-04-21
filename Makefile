@@ -1,3 +1,3 @@
 all:
-	gcc -o test b23cs1037_b23ch1025_b23ee1038_b23ci1009_test_model.c b23cs1037_b23ch1025_b23ee1038_b23ci1009_cnn_components.c b23cs1037_b23ch1025_b23ee1038_b23ci1009_MNIST_data_loader.c b23cs1037_b23ch1025_b23ee1038_b23ci1009_model_saver.c -lm
-	gcc -o main b23cs1037_b23ch1025_b23ee1038_b23ci1009_train_model.c b23cs1037_b23ch1025_b23ee1038_b23ci1009_cnn_components.c b23cs1037_b23ch1025_b23ee1038_b23ci1009_MNIST_data_loader.c b23cs1037_b23ch1025_b23ee1038_b23ci1009_model_saver.c -lm
+	gcc -o test test_model.c cnn_components.c MNIST_data_loader.c model_saver.c -lm
+	gcc -o main train_model.c cnn_components.c MNIST_data_loader.c model_saver.c -lm

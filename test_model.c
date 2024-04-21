@@ -24,7 +24,6 @@ int main(){
     /* Output layer - 10 nodes. */
     layer_component* loutput = create_full_layer(lfull2, 10, 0.1);
 
-    printf("saved model loaded\n");
     load_model(linput);
     printf("saved model loaded\n");
     char test_images_path[] = "data/t10k-images-idx3-ubyte";

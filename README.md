@@ -8,7 +8,7 @@ This repository contains the C implementation of a Convolutional Neural Network 
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/handwriting-to-text-recognition-c.git
+   https://github.com/madhavkataria1010/ics_majorproject.git
    ```
 
 2. Compile the code:

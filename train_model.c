@@ -6,6 +6,110 @@
 #include "include/cnn_components.h"
 #include "include/model_saver.h"
 
+int compute_acc(IdxFile* images, IdxFile* labels, layer_component* linput, layer_component* loutput){
+    int total = images->dims[0];
+    int ncorrect = 0;
+    for (int i = 0; i < total; i++) {
+        uint8_t img[28*28];
+        double x[28*28];
+        double y[10];
+        get_images(images, i, img);
+        for (int j = 0; j < 28*28; j++) {
+            x[j] = img[j]/255.0;
+        }
+        set_input_layer(linput, x);
+        get_output(loutput, y);
+        int label = get_labels(labels, i);
+        /* Pick the most probable label. */
+        int mj = -1;
+        for (int j = 0; j < 10; j++) {
+            if (mj < 0 || y[mj] < y[j]) {
+                mj = j;
+            }
+        }
+        if (mj == label) {
+            ncorrect++;
+        }
+    }
+    return ncorrect;
+}
+
+
+
+double compute_mse_loss(IdxFile* images, IdxFile* labels, layer_component* linput, layer_component* loutput){
+    int total = images->dims[0];
+    double mse_loss = 0.0;
+    for (int i = 0; i < total; i++) {
+        uint8_t img[28*28];
+        double x[28*28];
+        double y[10];
+        get_images(images, i, img);
+        for (int j = 0; j < 28*28; j++) {
+            x[j] = img[j]/255.0;
+        }
+        set_input_layer(linput, x);
+        get_output(loutput, y);
+        int label = get_labels(labels, i);
+        
+        // Convert label to one-hot encoding
+        double expected_output[10] = {0};
+        expected_output[label] = 1.0;
+        
+        // Calculate MSE loss
+        for (int j = 0; j < 10; j++) {
+            double diff = expected_output[j] - y[j];
+            mse_loss += diff * diff;
+        }
+    }
+    // Divide by the number of samples to get mean loss
+    mse_loss /= total;
+    
+    return mse_loss;
+}
+
+void compute_acc_err(IdxFile* images, IdxFile* labels, layer_component* linput, layer_component* loutput, float* arracc, double* arrerr){
+    int total = images->dims[0];
+    int ncorrect = 0;
+    double MSE = 0;
+    for (int i = 0; i < total; i++) {
+        uint8_t img[28*28];
+        double x[28*28];
+        double y[10];
+        get_images(images, i, img);
+        for (int j = 0; j < 28*28; j++) {
+            x[j] = img[j]/255.0;
+        }
+        set_input_layer(linput, x);
+        get_output(loutput, y);
+        int label = get_labels(labels, i);
+        /* Pick the most probable label. */
+        int mj = -1;
+        for (int j = 0; j < 10; j++) {
+            if (mj < 0 || y[mj] < y[j]) {
+                mj = j;
+            }
+        }
+        if (mj == label) {
+            ncorrect++;
+        }
+        // Convert label to one-hot encoding
+        double expected_output[10] = {0};
+        expected_output[label] = 1.0;
+        
+        // Calculate MSE loss
+        for (int j = 0; j < 10; j++) {
+            double diff = expected_output[j] - y[j];
+            MSE += diff * diff;
+        }
+    }
+    MSE/=total;
+    float finacc = (float) ncorrect/total*100;
+
+    *arracc = finacc;
+    *arrerr = MSE;
+}
+
+
 int main(){
     char train_images_path[] = "data/train-images-idx3-ubyte";
     char train_labels_path[] = "data/train-labels-idx1-ubyte";
@@ -17,39 +121,32 @@ int main(){
     /* Use a fixed random seed for debugging. */
     srand(0);
 
-    // printf("st");
-    
+    FILE* trainacc = fopen("trainacc.txt", "a");
+    FILE* testacc = fopen("testacc.txt", "a");
+    FILE* trainerror = fopen("trainerror.txt", "a");
+    FILE* testerror = fopen("testerror.txt", "a");
+
     IdxFile* train_images = get_data(train_images_path);
-    // printf("tri\n");
     IdxFile* train_labels = get_data(train_labels_path);
-    // printf("tr lab\n");
 
-    /* Initialize layers. */
-    /* Input layer - 1x28x28. */
-    layer_component* linput = create_input_layer(1, 28);
-    /* Conv1 layer - 16x14x14, 3x3 conv, padding=1, stride=2. */
-    /* (14-1)*2+3 < 28+1*2 */
-    layer_component* lconv1 = create_conv_layer(linput, 16, 14, 3, 1, 2, 0.1);
-    /* Conv2 layer - 32x7x7, 3x3 conv, padding=1, stride=2. */
-    /* (7-1)*2+3 < 14+1*2 */
-    layer_component* lconv2 = create_conv_layer(lconv1, 32, 7, 3, 1, 2, 0.1);
-    /* FC1 layer - 200 nodes. */
-    layer_component* lfull1 = create_full_layer(lconv2, 200, 0.1);
-    /* FC2 layer - 200 nodes. */
-    layer_component* lfull2 = create_full_layer(lfull1, 200, 0.1);
-    /* Output layer - 10 nodes. */
-    layer_component* loutput = create_full_layer(lfull2, 10, 0.1);
+    IdxFile* test_images = get_data(test_images_path);
+    IdxFile* test_labels = get_data(test_labels_path);
 
-    // printf("tt");
+    layer_component *linput, *lconv1, *lconv2, *lfull1, *lfull2, *loutput;
+    
+    // Initialize model architecture
+    init_model_architecture(&linput, &lconv1, &lconv2, &lfull1, &lfull2, &loutput);
+
     printf("training started\n");
     double rate = 0.1;
     double etotal = 0;
-    int nepoch = 2;
+    int nepoch = 10;
     int batch_size = 32;
     int train_size = train_images->dims[0];
-    printf("%d\n", train_size);
 
-    int limit = nepoch * train_size;
+    // printf("%d\n", train_size);
+
+    int limit = nepoch * train_size;         
     for (int i = 0; i < limit; i++) {
         /* Pick a random sample from the training data */
         uint8_t img[28*28];
@@ -60,20 +157,20 @@ int main(){
         for (int j = 0; j < 28*28; j++) {
             x[j] = img[j]/255.0;
         }
-        // printf("get_image\n");
-        set_input_layer(linput, x);       // printf("set input\n");
+        
+        set_input_layer(linput, x);
         get_output(loutput, y);
         int label = get_labels(train_labels, index);
-        // printf("%d\n", label);
-
+        
         for (int j = 0; j < 10; j++) {
             y[j] = (j == label)? 1 : 0;
         }
-        // printf("learn_output\n");
-        learn_output(loutput, y);       // printf("learn output\n");
-        // printf("learn_output001\n");
+        
+        learn_output(loutput, y);
+
         etotal += get_total_error(loutput);
-        // printf("%f\n", etotal);
+        float cur_error = get_total_error(loutput);
+
         if ((i % batch_size) == 0) {
             /* Minibatch: update the network for every n samples. */
             update_parameters(loutput, rate/batch_size);
@@ -82,49 +179,24 @@ int main(){
             fprintf(stderr, "i=%d, error=%.4f\n", i, etotal/1000);
             etotal = 0;
         }
-        
-    }
-
-    delete_data(train_images);
-    delete_data(train_labels);
-
-    IdxFile* test_images = get_data(test_images_path);
-    IdxFile* test_labels = get_data(test_labels_path);
-
-    printf("testing\n");
-    int ntests = test_images->dims[0];
-    int ncorrect = 0;
-    for (int i = 0; i < ntests; i++) {
-        uint8_t img[28*28];
-        double x[28*28];
-        double y[10];
-        get_images(test_images, i, img);
-        for (int j = 0; j < 28*28; j++) {
-            x[j] = img[j]/255.0;
-        }
-        set_input_layer(linput, x);
-        get_output(loutput, y);
-        int label = get_labels(test_labels, i);
-        /* Pick the most probable label. */
-        int mj = -1;
-        for (int j = 0; j < 10; j++) {
-            if (mj < 0 || y[mj] < y[j]) {
-                mj = j;
-            }
-        }
-        if (mj == label) {
-            ncorrect++;
-        }
-        if ((i % 1000) == 0) {
-            fprintf(stderr, "i=%d\n", i);
+        if ((i%60000) == 0){
+            float accu[2];
+            double mse[2];
+            compute_acc_err(train_images, train_labels, linput, loutput, &accu[0], &mse[0]);
+            compute_acc_err(test_images, test_labels, linput, loutput, &accu[1], &mse[1]);
+            fprintf(trainacc, "%f\n", accu[0]);
+            fprintf(testacc, "%f\n", accu[1]);
+            fprintf(trainerror, "%lf\n", mse[0]);
+            fprintf(testerror, "%lf\n", mse[1]);
         }
     }
-    fprintf(stderr, "ntests=%d, ncorrect=%d\n", ntests, ncorrect);
 
     delete_data(test_images);
     delete_data(test_labels);
+    delete_data(train_images);
+    delete_data(train_labels);
 
-    // save_model(linput);
+    save_model(linput);
 
     remove_layer(linput);
     remove_layer(lconv1);
@@ -132,6 +204,11 @@ int main(){
     remove_layer(lfull1);
     remove_layer(lfull2);
     remove_layer(loutput);
+    
+    fclose(trainacc);
+    fclose(testacc);
+    fclose(trainerror);
+    fclose(testerror);
 
     return 0;
 }

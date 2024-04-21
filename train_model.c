@@ -189,6 +189,7 @@ int main(){
             fprintf(trainerror, "%lf\n", mse[0]);
             fprintf(testerror, "%lf\n", mse[1]);
         }
+        if (i=120000 == 0) rate/=10;
     }
 
     delete_data(test_images);

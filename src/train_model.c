@@ -154,9 +154,9 @@ int main()
     init_model_architecture(&linput, &lconv1, &lconv2, &lfull1, &lfull2, &loutput); // initializing the model architecture
 
     printf("training started\n");
-    double learning_rate = 0.9; // learning rate
+    double learning_rate = 0.1; // learning rate
     double total_error = 0;
-    int num_epoch = 10;                     // number of epochs
+    int num_epoch = 10;                      // number of epochs
     int batch_size = 32;                    // batch size
     int train_size = train_images->dims[0]; // size of the training data
 
@@ -195,23 +195,21 @@ int main()
         }
         if ((i % 1000) == 0)
         {
-            printf("epoch=%d, i=%d, error=%.4f\n", (i/60000) + 1, i%60000, total_error / 1000);
+            printf("\033[1;34mepoch=%d\033[0m, \033[1;32mi=%d\033[0m, \033[1;31merror=%.4f\033[0m\n", (i / 60000) + 1, i % 60000, total_error / 1000);
             total_error = 0;
         }
         if ((i % 60000) == 0)
         {
-            printf("--------Epoch -> %i--------\n", (i / 60000)+1);
+            printf("\033[1;34m--------Epoch -> %i--------\033[0m\n", (i / 60000) + 1);
             float accu[2];
             double mse[2];
             compute_acc_err(train_images, train_labels, linput, loutput, &accu[0], &mse[0]);
             compute_acc_err(test_images, test_labels, linput, loutput, &accu[1], &mse[1]);
             fprintf(trainacc, "%f\n", accu[0]);
-            fprintf(testacc,"%f\n", accu[1]); // storing the accuracy and the mean squared error loss in the files
+            fprintf(testacc, "%f\n", accu[1]); // storing the accuracy and the mean squared error loss in the files
             fprintf(trainerror, "%lf\n", mse[0]);
             fprintf(testerror, "%lf\n", mse[1]); // storing the accuracy and the mean squared error loss in the files
         }
-        if (i % 120000 == 0)
-            learning_rate /= 10;
     }
 
     delete_data(test_images);

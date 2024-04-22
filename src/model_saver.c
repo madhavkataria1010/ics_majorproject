@@ -76,6 +76,6 @@ void init_model_architecture(layer_component **linput, layer_component **lconv1,
     // FC1 layer - 200 nodes.
     *lfull1 = create_full_layer(*lconv2, 200, 0.1);
     // FC2 layer - 200 nodes.
-    *lfull2 = create_full_layer(*lfull1, 200, 0.1); // Fully connected layer - 200 nodes.
+    *lfull2 = create_full_layer(*lfull1, 200, 0.1); // Fully connected layer - 200 nodes. 
     *loutput = create_full_layer(*lfull2, 10, 0.1); // Output layer - 10 nodes.
 }

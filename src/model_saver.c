@@ -6,7 +6,7 @@
 // Function to save the model in txt file
 void save_model(layer_component *linput)
 {
-    FILE *file = fopen("model.txt", "a");
+    FILE *file = fopen("../results/model.txt", "a");
 
     if (file == NULL)
     {
@@ -37,7 +37,7 @@ void save_model(layer_component *linput)
 void load_model(layer_component *linput)
 {
 
-    FILE *file = fopen("model.txt", "r");
+    FILE *file = fopen("../results/model.txt", "r");
 
     if (file == NULL)
     {

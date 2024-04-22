@@ -195,7 +195,7 @@ int main()
         }
         if ((i % 1000) == 0)
         {
-            printf("i=%d, error=%.4f\n", i, total_error / 1000);
+            printf("epoch=%d, i=%d, error=%.4f\n", (i/60000) + 1, i%60000, total_error / 1000);
             total_error = 0;
         }
         if ((i % 60000) == 0)

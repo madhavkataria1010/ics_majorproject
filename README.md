@@ -31,11 +31,11 @@ This repository contains the C implementation of a Convolutional Neural Network 
 
 ## Model Architecture
 
-The model architecture is implemented in `b23cs1037_b23ch1025_b23ee1038_b23ci1009_model_saver.c` and consists of functions for initializing the model, saving the model and loading the model.
+The model architecture is implemented in `model_saver.c` and consists of functions for initializing the model, saving the model and loading the model.
 
 ## Dataset
 
-The dataset used is included in `/data` consisting of 60,000 training and 10,000 testing dataset in idx3-ubyte format for images and id1-ubyte format for labels. The file `b23cs1037_b23ch1025_b23ee1038_b23ci1009_MNIST_data_loader.c` consists of funtion to load, unload and get data images and labels. +
+The dataset used is included in `/data` consisting of 60,000 training and 10,000 testing dataset in idx3-ubyte format for images and id1-ubyte format for labels. The file `MNIST_data_loader.c` consists of funtion to load, unload and get data images and labels. +
 
 <p align="center">
   <img src="assets/convolutionalnn.png" width="350" title="hover text">
@@ -45,7 +45,7 @@ The dataset used is included in `/data` consisting of 60,000 training and 10,000
 
 The training data is loaded from the MNIST dataset and the model is trained using stochastic gradient descent.
 After the training, the model parameter is saved in `/reults/model.txt` that is stored and can be loaded using funtions 
-stored in `b23cs1037_b23ch1025_b23ee1038_b23ci1009_model_saver.c`.
+stored in `model_saver.c`.
 
 ## Evaluation
 

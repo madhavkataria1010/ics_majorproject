@@ -137,10 +137,10 @@ int main()
     // Seed random number generator of the model
     srand(0);
 
-    FILE *trainacc = fopen("trainacc.txt", "a");
-    FILE *testacc = fopen("testacc.txt", "a");
-    FILE *trainerror = fopen("trainerror.txt", "a");
-    FILE *testerror = fopen("testerror.txt", "a"); // opening the files to store the accuracy and the mean squared error loss
+    FILE *trainacc = fopen("../results/trainacc.txt", "a");
+    FILE *testacc = fopen("../results/testacc.txt", "a");
+    FILE *trainerror = fopen("../results/trainerror.txt", "a");
+    FILE *testerror = fopen("../results/testerror.txt", "a"); // opening the files to store the accuracy and the mean squared error loss
 
     IdxFile *train_images = get_data(train_images_path);
     IdxFile *train_labels = get_data(train_labels_path);

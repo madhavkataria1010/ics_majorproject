@@ -128,19 +128,19 @@ void compute_acc_err(IdxFile *images, IdxFile *labels, layer_component *linput, 
 
 int main()
 {
-    char train_images_path[] = "../data/train-images-idx3-ubyte";
-    char train_labels_path[] = "../data/train-labels-idx1-ubyte";
+    char train_images_path[] = "data/train-images-idx3-ubyte";
+    char train_labels_path[] = "data/train-labels-idx1-ubyte";
 
-    char test_images_path[] = "../data/t10k-images-idx3-ubyte";
-    char test_labels_path[] = "../data/t10k-labels-idx1-ubyte";
+    char test_images_path[] = "data/t10k-images-idx3-ubyte";
+    char test_labels_path[] = "data/t10k-labels-idx1-ubyte";
 
     // Seed random number generator of the model
     srand(0);
 
-    FILE *trainacc = fopen("../results/trainacc.txt", "a");
-    FILE *testacc = fopen("../results/testacc.txt", "a");
-    FILE *trainerror = fopen("../results/trainerror.txt", "a");
-    FILE *testerror = fopen("../results/testerror.txt", "a"); // opening the files to store the accuracy and the mean squared error loss
+    FILE *trainacc = fopen("results/trainacc.txt", "a");
+    FILE *testacc = fopen("results/testacc.txt", "a");
+    FILE *trainerror = fopen("results/trainerror.txt", "a");
+    FILE *testerror = fopen("results/testerror.txt", "a"); // opening the files to store the accuracy and the mean squared error loss
 
     IdxFile *train_images = get_data(train_images_path);
     IdxFile *train_labels = get_data(train_labels_path);

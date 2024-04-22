@@ -21,8 +21,8 @@ int main()
 
     printf("saved model loaded\n");
     // Load test data
-    char test_images_path[] = "../data/t10k-images-idx3-ubyte";
-    char test_labels_path[] = "../data/t10k-labels-idx1-ubyte";
+    char test_images_path[] = "data/t10k-images-idx3-ubyte";
+    char test_labels_path[] = "data/t10k-labels-idx1-ubyte";
 
     IdxFile *test_images = get_data(test_images_path);
     printf("test images loaded\n");

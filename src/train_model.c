@@ -154,7 +154,7 @@ int main()
     init_model_architecture(&linput, &lconv1, &lconv2, &lfull1, &lfull2, &loutput); // initializing the model architecture
 
     printf("training started\n");
-    double learning_rate = 0.01; // learning rate
+    double learning_rate = 0.9; // learning rate
     double total_error = 0;
     int num_epoch = 10;                     // number of epochs
     int batch_size = 32;                    // batch size

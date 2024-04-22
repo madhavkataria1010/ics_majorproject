@@ -59,28 +59,24 @@ After training, the model achieved an accuracy of 99% on the training set and 98
 On the test set, the model achieved an accuracy of 97%, demonstrating its effectiveness in recognizing handwritten digits.
 <p align="center">
   <img src="assets/train_acc.png" width="350" title="hover text">
-</p>
-<p align="center">
+</p><p align="center">
   Train Accuracy
 </p>
 
 <p align="center">
   <img src="assets/test_accuracy.png" width="350" title="hover text">
-</p>
-<p align="center">
+</p><p align="center">
   Test Accuracy
 </p>
 
 <p align="center">
   <img src="assets/train_loss.png" width="350" title="hover text">
-</p>
-<p align="center">
+</p><p align="center">
   Train Loss
 </p>
 
 <p align="center">
   <img src="assets/test_loss.png" width="350" title="hover text">
-</p>
-<p align="center">
+</p><p align="center">
   Test Loss
 </p>

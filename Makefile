@@ -8,8 +8,11 @@ OBJ2 = src/train_model.o src/cnn_components.o src/MNIST_data_loader.o src/model_
 
 %.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
+	
 
 all: test main
+	rm -f src/*.o
+
 
 test: $(OBJ1)
 	$(CC) -o $@ $^ $(CFLAGS) -lm
@@ -19,3 +22,4 @@ main: $(OBJ2)
 
 clean:
 	rm -f src/*.o test main
+

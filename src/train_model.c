@@ -154,10 +154,10 @@ int main()
     init_model_architecture(&linput, &lconv1, &lconv2, &lfull1, &lfull2, &loutput); // initializing the model architecture
 
     printf("training started\n");
-    double learning_rate = 0.1; // learning rate
+    double learning_rate = 0.369; // learning rate
     double total_error = 0;
     int num_epoch = 10;                      // number of epochs
-    int batch_size = 32;                    // batch size
+    int batch_size = 64;                    // batch size
     int train_size = train_images->dims[0]; // size of the training data
 
     // printf("%d\n", train_size);
@@ -210,6 +210,11 @@ int main()
             fprintf(trainerror, "%lf\n", mse[0]);
             fprintf(testerror, "%lf\n", mse[1]); // storing the accuracy and the mean squared error loss in the files
         }
+        if (i == 120000)
+        {
+            learning_rate /= 10.2; // decreasing the learning rate
+        }
+        
     }
 
     delete_data(test_images);

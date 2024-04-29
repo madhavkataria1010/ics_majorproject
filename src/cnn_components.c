@@ -99,7 +99,7 @@ layer_component *create_conv_layer(layer_component *prev_layer, int depth, int d
     self->errors = (double *)calloc(self->num_nodes, sizeof(double));
 
     self->num_biases = depth;
-    // num weights = depth * prev_layer->depth * kernel_size * kernel_size
+    // num weights = depth *    ->depth * kernel_size * kernel_size
     self->num_weights = depth * prev_layer->depth * kernel_size * kernel_size;
     self->biases = (double *)calloc(self->num_biases, sizeof(double));
     self->up_biases = (double *)calloc(self->num_biases, sizeof(double));

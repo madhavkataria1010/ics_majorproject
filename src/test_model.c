@@ -92,7 +92,7 @@ int compute_acc(IdxFile *images, IdxFile *labels, layer_component *linput, layer
     return ncorrect;
 }
 
-// Mean Squared Error los function
+// Mean Squared Error loss function
 double compute_mse_loss(IdxFile *images, IdxFile *labels, layer_component *linput, layer_component *loutput)
 {
     int total = images->dims[0];

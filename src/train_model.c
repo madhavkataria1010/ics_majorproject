@@ -153,10 +153,10 @@ int main()
     // Initialize model architecture
     init_model_architecture(&linput, &lconv1, &lconv2, &lfull1, &lfull2, &loutput); // initializing the model architecture
 
-    printf("training started\n");
-    double learning_rate = 0.369; // learning rate
+    printf("Training started\n");
+    double learning_rate = 0.1; // learning rate
     double total_error = 0;
-    int num_epoch = 10;                      // number of epochs
+    int num_epoch = 10;                     // number of epochs
     int batch_size = 64;                    // batch size
     int train_size = train_images->dims[0]; // size of the training data
 
@@ -167,7 +167,7 @@ int main()
     {
         uint8_t img[28 * 28];
         double x[28 * 28];
-        double y[10];
+        double y[10];// defining the input and output
         int index = rand() % train_size;      // generating a random index
         get_images(train_images, index, img); // storing the image in img
         for (int j = 0; j < 28 * 28; j++)
@@ -212,7 +212,7 @@ int main()
         }
         if (i == 120000)
         {
-            learning_rate /= 10.2; // decreasing the learning rate
+            learning_rate /= 10; // decreasing the learning rate
         }
         
     }

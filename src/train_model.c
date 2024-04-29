@@ -212,7 +212,7 @@ int main()
         }
         if (i == 120000)
         {
-            learning_rate /= 10; // decreasing the learning rate
+            learning_rate /= 10.1; // decreasing the learning rate scheduler
         }
         
     }

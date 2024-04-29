@@ -69,9 +69,9 @@ void init_model_architecture(layer_component **linput, layer_component **lconv1,
 {
     // Input layer - 1x28x28.
     *linput = create_input_layer(1, 28);
-    // Conv1 layer - 16x14x14, 3x3 conv, padding=3, stride=1.
+    // Conv1 layer - 16x14x14, 3x3 conv, padding=1, stride=2. kernal - 3
     *lconv1 = create_conv_layer(*linput, 16, 14, 3, 1, 2, 0.1);
-    // Conv2 layer - 32x7x7, 7x7 conv, padding=3, stride=1.
+    // Conv2 layer - 32x7x7, 7x7 conv, padding=1, stride=2  , Kernal - 3
     *lconv2 = create_conv_layer(*lconv1, 32, 7, 3, 1, 2, 0.1);
     // FC1 layer - 200 nodes.
     *lfull1 = create_full_layer(*lconv2, 200, 0.1);

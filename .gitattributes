@@ -1,0 +1,6 @@
+*.h linguist-language=C
+*.cpp linguist-language=C
+
+generated/*.d linguist-generated=true
+
+*.t linguist-detectable=false

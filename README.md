@@ -104,42 +104,45 @@ The model parameters can be saved and loaded in `.txt` format, stored in `./resu
 
 ### Model Architecture Visualization
 
-![Model Architecture](assets/model_architecture.png)
+<div align=center>
+   <img src="assets/model_architecture.png" title="Model Architecture">
+</div>
 
 ### Training and Validation Accuracy and Loss Curve
-<p align="center">
-  <table>
-    <tr>
-      <td>
-        <p align="center">
-          <img src="assets/train_acc.png" width="350" title="Train Accuracy">
-        </p>
-        <p align="center">Train Accuracy</p>
-      </td>
-      <td>
-        <p align="center">
-          <img src="assets/test_accuracy.png" width="350" title="Test Accuracy">
-        </p>
-        <p align="center">Test Accuracy</p>
-      </td>
-    </tr>
-    <tr>
-      <td>
-        <p align="center">
-          <img src="assets/train_loss.png" width="350" title="Train Loss">
-        </p>
-        <p align="center">Train Loss</p>
-      </td>
-      <td>
-        <p align="center">
-          <img src="assets/test_loss.png" width="350" title="Test Loss">
-        </p>
-        <p align="center">Test Loss</p>
-      </td>
-    </tr>
-  </table>
-</p>
-
+<div align=center>
+   <p align="center">
+     <table>
+       <tr>
+         <td>
+           <p align="center">
+             <img src="assets/train_acc.png" width="350" title="Train Accuracy">
+           </p>
+           <p align="center">Train Accuracy</p>
+         </td>
+         <td>
+           <p align="center">
+             <img src="assets/test_accuracy.png" width="350" title="Test Accuracy">
+           </p>
+           <p align="center">Test Accuracy</p>
+         </td>
+       </tr>
+       <tr>
+         <td>
+           <p align="center">
+             <img src="assets/train_loss.png" width="350" title="Train Loss">
+           </p>
+           <p align="center">Train Loss</p>
+         </td>
+         <td>
+           <p align="center">
+             <img src="assets/test_loss.png" width="350" title="Test Loss">
+           </p>
+           <p align="center">Test Loss</p>
+         </td>
+       </tr>
+     </table>
+   </p>
+</div>
 
 ## **Conclusion**
 This project demonstrates the efficiency and effectiveness of implementing a CNN in C from scratch. The C implementation offers competitive accuracy with a significant reduction in inference time compared to the Python (PyTorch) implementation, making it suitable for performance-sensitive applications.

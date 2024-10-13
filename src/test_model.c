@@ -20,6 +20,7 @@ int main()
     load_model(linput);
 
     printf("saved model loaded\n");
+
     // Load test data
     char test_images_path[] = "data/t10k-images-idx3-ubyte";
     char test_labels_path[] = "data/t10k-labels-idx1-ubyte";
@@ -29,15 +30,34 @@ int main()
     IdxFile *test_labels = get_data(test_labels_path);
     printf("test labels loaded\n");
 
-    printf("testing\n");
+    printf("calculating accuracy and loss on test data\n");
     // calculate accuracy and loss
-    int ncorrect = compute_acc(test_images, test_labels, linput, loutput);
-    float accuracy = (float)ncorrect / test_images->dims[0];
+    int ncorrect_test = compute_acc(test_images, test_labels, linput, loutput);
+    float accuracy_test = (float)ncorrect_test / test_images->dims[0];
 
-    double MSE_loss = compute_mse_loss(test_images, test_labels, linput, loutput);
+    double MSE_loss_test = compute_mse_loss(test_images, test_labels, linput, loutput);
 
-    printf("Accuracy: %f\n", accuracy);
-    printf("Mean Squared Error Loss: %f\n", MSE_loss);
+    printf("Accuracy: %f\n", accuracy_test);
+    printf("Mean Squared Error Loss: %f\n", MSE_loss_test);
+
+    // on train data
+    char train_images_path[] = "data/train-images-idx3-ubyte";
+    char train_labels_path[] = "data/train-labels-idx1-ubyte";
+
+    IdxFile *train_images = get_data(train_images_path);
+    printf("test images loaded\n");
+    IdxFile *train_labels = get_data(train_labels_path);
+    printf("test labels loaded\n");
+
+    printf("calculating accuracy and loss on train data\n");
+    // calculate accuracy and loss
+    int ncorrect_train = compute_acc(train_images, train_labels, linput, loutput);
+    float accuracy_train = (float)ncorrect_train / train_images->dims[0];
+
+    double MSE_loss_train= compute_mse_loss(train_images, train_labels, linput, loutput);
+
+    printf("Accuracy: %f\n", accuracy_train);
+    printf("Mean Squared Error Loss: %f\n", MSE_loss_train);
 
     delete_data(test_images);
     delete_data(test_labels);

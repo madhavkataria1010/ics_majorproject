@@ -100,6 +100,8 @@ After training, the model achieved the following accuracies:
 
 The model parameters can be saved and loaded in `.txt` format, stored in `./results/model.txt`.
 
+**Note:** The PyTorch implementation of the handwritten digit recognition model was done using the repository [MNIST_CNN](https://github.com/Laksh-Mendpara/MNIST_CNN.git).
+
 ### Model Architecture Visualization
 
 ![Model Architecture](assets/model_architecture.png)

@@ -21,7 +21,11 @@ This project implements a Convolutional Neural Network (CNN) for handwritten dig
    git clone https://github.com/yourusername/handwriting-to-text-recognition-c.git
    ```
 
-2. Compile the code:
+2. Enter the repository:
+    ```bash
+    cd CNN-in-C
+    ```
+3. Compile the code:
    ```bash
    make
    ```
@@ -32,12 +36,7 @@ This project implements a Convolutional Neural Network (CNN) for handwritten dig
    ```bash
    ./main
    ```
-2. Enter the repository:
-    ```bash
-    cd CNN-in-C
-    ```
-
-3. Run the test file:
+2. Run the test file:
    ```bash
    ./test
    ```

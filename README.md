@@ -4,13 +4,43 @@ This project implements a Convolutional Neural Network (CNN) for handwritten dig
 
 ## Table of Contents
 
+- [Installation](#installation)
+- [Usage](#usage)
 - [Dataset Description](#dataset-description)
 - [Model Architecture](#model-architecture)
 - [Training](#training)
 - [Results](#results)
-- [Usage](#usage)
 - [Future Scope](#future-scope)
 - [License](#license)
+
+
+## **Installation**
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/handwriting-to-text-recognition-c.git
+   ```
+
+2. Compile the code:
+   ```bash
+   make
+   ```
+
+## **Usage**
+
+1. Run the training file:
+   ```bash
+   ./main
+   ```
+2. Enter the repository:
+    ```bash
+    cd CNN-in-C
+    ```
+
+3. Run the test file:
+   ```bash
+   ./test
+   ```
 
 ## Dataset Description
 
@@ -75,39 +105,43 @@ The model parameters can be saved and loaded in `.txt` format, stored in `./resu
 
 ![Model Architecture](assets/model_architecture.png)
 
-### Training and Validation Accuracy
+### Training and Validation Accuracy and Loss Curve
+<p align="center">
+  <table>
+    <tr>
+      <td>
+        <p align="center">
+          <img src="assets/train_acc.png" width="350" title="Train Accuracy">
+        </p>
+        <p align="center">Train Accuracy</p>
+      </td>
+      <td>
+        <p align="center">
+          <img src="assets/test_accuracy.png" width="350" title="Test Accuracy">
+        </p>
+        <p align="center">Test Accuracy</p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p align="center">
+          <img src="assets/train_loss.png" width="350" title="Train Loss">
+        </p>
+        <p align="center">Train Loss</p>
+      </td>
+      <td>
+        <p align="center">
+          <img src="assets/test_loss.png" width="350" title="Test Loss">
+        </p>
+        <p align="center">Test Loss</p>
+      </td>
+    </tr>
+  </table>
+</p>
 
-![Training and Validation Accuracy](assets/training_validation_accuracy.png)
 
-## Usage
-
-To run the model:
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/handwriting-to-text-recognition.git
-   cd handwriting-to-text-recognition
-   ```
-
-2. Compile the C implementation:
-   ```bash
-   gcc -o cnn cnn.c model_saver.c -lm
-   ```
-
-3. Run the C implementation:
-   ```bash
-   ./cnn
-   ```
-
-4. For the Python implementation, ensure you have the required libraries installed:
-   ```bash
-   pip install torch torchvision
-   ```
-
-5. Run the Python script:
-   ```bash
-   python train.py
-   ```
+## **Conclusion**
+This project demonstrates the efficiency and effectiveness of implementing a CNN in C from scratch. The C implementation offers competitive accuracy with a significant reduction in inference time compared to the Python (PyTorch) implementation, making it suitable for performance-sensitive applications.
 
 ## Future Scope
 

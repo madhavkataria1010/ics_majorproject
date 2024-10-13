@@ -1,22 +1,36 @@
+# Handwriting-to-Text Recognition Model
+
+This project implements a Convolutional Neural Network (CNN) for handwritten digit recognition using the MNIST dataset. The model is implemented in both C and Python, allowing for a comparison of performance between the two languages.
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Usage](#usage)
+- [Dataset Description](#dataset-description)
+- [Model Architecture](#model-architecture)
+- [Training](#training)
+- [Results](#results)
+- [Future Scope](#future-scope)
+- [License](#license)
 
 
-# Handwriting-to-Text Recognition Model (C Implementation)
-
-This repository contains the C implementation of a Convolutional Neural Network (CNN) model trained on the MNIST dataset for recognizing handwritten digits.
-
-## Installation
+## **Installation**
 
 1. Clone the repository:
    ```bash
    git clone https://github.com/yourusername/handwriting-to-text-recognition-c.git
    ```
 
-2. Compile the code:
+2. Enter the repository:
+    ```bash
+    cd CNN-in-C
+    ```
+3. Compile the code:
    ```bash
-    make
+   make
    ```
 
-## Usage
+## **Usage**
 
 1. Run the training file:
    ```bash
@@ -27,58 +41,115 @@ This repository contains the C implementation of a Convolutional Neural Network 
    ./test
    ```
 
+## Dataset Description
 
+The MNIST dataset consists of 60,000 training examples and 10,000 test examples of handwritten digits. The digits are size-normalized and centered within a fixed-size 28x28 pixel image.
+
+You can find more information about the dataset [here](http://yann.lecun.com/exdb/mnist/).
 
 ## Model Architecture
 
-The model architecture is implemented in `model_saver.c` and consists of functions for initializing the model, saving the model and loading the model.
+The CNN architecture consists of the following layers:
 
-<p align="center">
-  <img src="assets/convolutionalnn.png" width="350" title="hover text">
-</p>
+1. **Input Layer**: 1x28x28 (1 channel, 28x28 pixels)
+2. **Convolutional Layer 1 (Conv1)**: 16 filters, output size 16x14x14, kernel size 3x3, padding=1, stride=2
+3. **Convolutional Layer 2 (Conv2)**: 32 filters, output size 32x7x7, kernel size 3x3, padding=1, stride=2
+4. **Fully Connected Layer 1 (FC1)**: 200 nodes
+5. **Fully Connected Layer 2 (FC2)**: 200 nodes
+6. **Output Layer**: 10 nodes with Softmax activation function
 
-## Dataset
+The model architecture can be modified in the following function of `model_saver.c`:
 
-The dataset used is included in `/data` consisting of 60,000 training and 10,000 testing dataset in idx3-ubyte format for images and id1-ubyte format for labels. The file `MNIST_data_loader.c` consists of funtion to load, unload and get data images and labels. +
+```c
+void init_model_architecture(layer_component **linput, layer_component **lconv1, layer_component **lconv2,
+                             layer_component **lfull1, layer_component **lfull2, layer_component **loutput)
+{
+    // Input layer - 1x28x28.
+    *linput = create_input_layer(1, 28);
+    // Conv1 layer - 16x14x14, 3x3 conv, padding=1, stride=2. kernel - 3
+    *lconv1 = create_conv_layer(*linput, 16, 14, 3, 1, 2, 0.1);
+    // Conv2 layer - 32x7x7, 3x3 conv, padding=1, stride=2, kernel - 3
+    *lconv2 = create_conv_layer(*lconv1, 32, 7, 3, 1, 2, 0.1);
+    // FC1 layer - 200 nodes.
+    *lfull1 = create_full_layer(*lconv2, 200, 0.1);
+    // FC2 layer - 200 nodes.
+    *lfull2 = create_full_layer(*lfull1, 200, 0.1); // Fully connected layer - 200 nodes. 
+    *loutput = create_full_layer(*lfull2, 10, 0.1); // Output layer - 10 nodes.
+}
+```
 
 ## Training
 
-The training data is loaded from the MNIST dataset and the model is trained using stochastic gradient descent.
-After the training, the model parameter is saved in `/reults/model.txt` that is stored and can be loaded using funtions 
-stored in `model_saver.c`.
+The model was trained using the following parameters:
+- **Optimizer**: Stochastic Gradient Descent (SGD)
+- **Learning Rate**: 0.1
+- **Loss Function**: Mean Squared Error
+- **Batch Size**: 64
+- **Epochs**: 10
 
-## Evaluation
-
-The model's performance is evaluated on the test dataset to measure its accuracy in recognizing handwritten digits.
+The training data was split into training and validation sets to prevent overfitting.
 
 ## Results
-Inference time: Inference time of C is far less than that observed by running that with the python
-code which is about (1/10) of that.
-The training reult is stored in `/results` folder.
-After training, the model achieved an accuracy of 99% on the training set and 98% on the vali-dation set. 
-On the test set, the model achieved an accuracy of 97%, demonstrating its effectiveness in recognizing handwritten digits.
+
+After training, the model achieved the following accuracies:
+
+| Implementation       | Training Accuracy | Test Accuracy |
+|----------------------|-------------------|---------------|
+| C Implementation      | 98.61%            | 97.42%        |
+| PyTorch Implementation | 99.49%            | 98.22%        |
+
+The model parameters can be saved and loaded in `.txt` format, stored in `./results/model.txt`.
+
+### Model Architecture Visualization
+
+![Model Architecture](assets/model_architecture.png)
+
+### Training and Validation Accuracy and Loss Curve
 <p align="center">
-  <img src="assets/train_acc.png" width="350" title="hover text">
-</p><p align="center">
-  Train Accuracy
+  <table>
+    <tr>
+      <td>
+        <p align="center">
+          <img src="assets/train_acc.png" width="350" title="Train Accuracy">
+        </p>
+        <p align="center">Train Accuracy</p>
+      </td>
+      <td>
+        <p align="center">
+          <img src="assets/test_accuracy.png" width="350" title="Test Accuracy">
+        </p>
+        <p align="center">Test Accuracy</p>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <p align="center">
+          <img src="assets/train_loss.png" width="350" title="Train Loss">
+        </p>
+        <p align="center">Train Loss</p>
+      </td>
+      <td>
+        <p align="center">
+          <img src="assets/test_loss.png" width="350" title="Test Loss">
+        </p>
+        <p align="center">Test Loss</p>
+      </td>
+    </tr>
+  </table>
 </p>
 
-<p align="center">
-  <img src="assets/test_accuracy.png" width="350" title="hover text">
-</p><p align="center">
-  Test Accuracy
-</p>
 
-<p align="center">
-  <img src="assets/train_loss.png" width="350" title="hover text">
-</p><p align="center">
-  Train Loss
-</p>
+## **Conclusion**
+This project demonstrates the efficiency and effectiveness of implementing a CNN in C from scratch. The C implementation offers competitive accuracy with a significant reduction in inference time compared to the Python (PyTorch) implementation, making it suitable for performance-sensitive applications.
 
-<p align="center">
-  <img src="assets/test_loss.png" width="350" title="hover text">
-</p><p align="center">
-  Test Loss
-</p>
+## Future Scope
 
+Several avenues for exploration still exist to achieve better performance:
+- Hyperparameter optimization for fine-tuning the current CNN architecture.
+- Implementing data augmentation for improved robustness.
+- Incorporating binary cross-entropy loss and integrating Softmax activation.
+- Extending the model to recognize handwritten characters, complete words, or sentences using additional convolutional layers and Recurrent Neural Networks (RNNs).
 
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
